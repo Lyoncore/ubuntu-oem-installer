@@ -70,8 +70,8 @@ var getPartitions = GetPartitions
 
 func main() {
 	flag.Parse()
-	if len(flag.Args()) != 3 {
-		log.Panicf(fmt.Sprintf("Need two arguments. [INSTALLER_LABEL]. Current arguments: %v", flag.Args()))
+	if len(flag.Args()) != 1 {
+		log.Panicf(fmt.Sprintf("Need a argument of [INSTALLER_LABEL]. Current arguments: %v", flag.Args()))
 	}
 	InstallerLabel := flag.Arg(0)
 	log.Printf("INSTALLER_LABEL: %s", InstallerLabel)
