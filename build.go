@@ -57,7 +57,7 @@ func main() {
 
 		case "build":
 			clean()
-			build("bin/ubuntu-oem-installer", "./src/", []string{})
+			build("bin/oem-image-installer", "./src/", []string{})
 
 		case "clean":
 			clean()
