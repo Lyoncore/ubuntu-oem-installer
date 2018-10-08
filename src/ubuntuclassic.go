@@ -8,7 +8,7 @@ import (
 
 func envForUbuntuClassic() error {
 	const CURTIN_RECO_ROOT_DIR = "/cdrom"
-	if _, err := os.Stat(CURTIN_RECO_ROOT_DIR); os.IsExist(err) {
+	if _, err := os.Stat(CURTIN_RECO_ROOT_DIR); !os.IsNotExist(err) {
 		if _, err := os.Stat(RECO_ROOT_DIR); os.IsNotExist(err) {
 			if err = os.Mkdir(RECO_ROOT_DIR, 0755); err != nil {
 				log.Println("create dir ", RECO_ROOT_DIR, "failed", err.Error())
