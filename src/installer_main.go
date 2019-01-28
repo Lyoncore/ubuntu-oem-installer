@@ -91,9 +91,20 @@ func main() {
 	}
 
 	// copy from installer to recovery partition
-	err = CopyRecoveryPart(parts)
-	if err != nil {
-		os.Exit(-1)
+	log.Println("configs.Recovery.Type is %s", configs.Recovery.Type)
+
+	if configs.Recovery.Type == "INSTALLER_ONLY" {
+		log.Println("configs.Recovery.Type is %s", configs.Recovery.Type)
+		err = InstallSystemPart(parts)
+		if err != nil {
+			os.Exit(-1)
+		}
+	} else {
+		log.Println("configs.Recovery.Type is %s", configs.Recovery.Type)
+		err = CopyRecoveryPart(parts)
+		if err != nil {
+			os.Exit(-1)
+		}
 	}
 	os.Exit(0)
 }

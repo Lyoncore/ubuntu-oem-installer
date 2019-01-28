@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2016 Canonical Ltd
+
+v * Copyright (C) 2016 Canonical Ltd
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -399,5 +400,10 @@ func CopyRecoveryPart(parts *Partitions) error {
 		cmd.Run()
 	}
 
+	return nil
+}
+
+func InstallSystemPart(parts *Partitions) error {
+	log.Println("This is InstallSystemPart...")
 	return nil
 }

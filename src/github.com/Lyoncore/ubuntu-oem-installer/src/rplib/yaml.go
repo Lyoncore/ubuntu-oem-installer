@@ -100,8 +100,8 @@ func (config *ConfigRecovery) checkConfigs() (err error) {
 	if config.Recovery.Type == "" {
 		err = errors.New("'recovery -> type' field not presented")
 		log.Printf(err.Error())
-	} else if config.Recovery.Type != FACTORY_RESTORE && config.Recovery.Type != HEADLESS_INSTALLER && config.Recovery.Type != FACTORY_INSTALL {
-		err = errors.New(fmt.Sprintf("'recovery -> type' only accept", FACTORY_RESTORE, HEADLESS_INSTALLER, FACTORY_INSTALL))
+	} else if config.Recovery.Type != FACTORY_RESTORE && config.Recovery.Type != HEADLESS_INSTALLER && config.Recovery.Type != FACTORY_INSTALL && config.Recovery.Type != INSTALLER_ONLY {
+		err = errors.New(fmt.Sprintf("'recovery -> type' only accept", FACTORY_RESTORE, HEADLESS_INSTALLER, FACTORY_INSTALL, INSTALLER_ONLY))
 		log.Printf(err.Error())
 	}
 
