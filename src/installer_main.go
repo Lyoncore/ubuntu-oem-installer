@@ -27,7 +27,7 @@ import (
 	"strconv"
 	"time"
 
-	rplib "github.com/Lyoncore/ubuntu-oem-installer/src/rplib"
+q	rplib "github.com/Lyoncore/ubuntu-oem-installer/src/rplib"
 )
 
 var version string

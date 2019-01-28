@@ -260,7 +260,7 @@ func GetPartitions(recoveryLabel string) (*Partitions, error) {
 	const OLD_PARTITION = "/tmp/old-partition.txt"
 	parts = Partitions{"", "", "", "", -1, -1, -1, -1, -1, 0, 20479, -1, -1, -1, -1, -1, -1, -1}
 
-	//The Sourec device which must has a recovery partition
+	//The Source device which must has a recovery partition
 	parts.SourceDevNode, parts.SourceDevPath, parts.Recovery_nr, err = FindPart(recoveryLabel)
 	if err != nil {
 		err = errors.New(fmt.Sprintf("Recovery partition (LABEL=%s) not found", recoveryLabel))

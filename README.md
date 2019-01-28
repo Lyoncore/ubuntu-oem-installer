@@ -9,7 +9,7 @@ This is a installer for OEM to create factory recovery partition and dump ubuntu
 ``` bash
 git clone https://github.com/Lyoncore/ubuntu-oem-installer.git
 cd ubuntu-oem-installer
-go get launchpad.net/godeps
+GOPATH=$PWD go get github.com/rogpeppe/godeps
 godeps -t -u dependencies.tsv
 go run bulid.go build
 ```
