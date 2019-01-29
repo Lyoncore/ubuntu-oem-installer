@@ -40,6 +40,7 @@ const (
 	CONFIG_YAML      = RECO_ROOT_DIR + "recovery/config.yaml"
 	RECO_TAR_MNT_DIR = "/tmp/recoMnt/"
 	SYSBOOT_MNT_DIR  = "/tmp/system-boot/"
+	WRITABLE_MNT_DIR     = "/tmp/writableMnt/"
 )
 
 var configs rplib.ConfigRecovery
@@ -69,12 +70,13 @@ func parseConfigs(configFilePath string) {
 var getPartitions = GetPartitions
 
 func main() {
+	log.Printf("Ubuntu OEM installer Start.")
 	flag.Parse()
 	if len(flag.Args()) != 1 {
 		log.Panicf(fmt.Sprintf("Need a argument of [INSTALLER_LABEL]. Current arguments: %v", flag.Args()))
 	}
 	InstallerLabel := flag.Arg(0)
-	log.Printf("INSTALLER_LABEL: %s", InstallerLabel)
+	log.Printf("Installer Label: %s", InstallerLabel)
 
 	// setup if now is ubuntu server curtin image
 	err := envForUbuntuClassic()
@@ -90,17 +92,18 @@ func main() {
 		log.Panicf("Installer partition not found, error: %s\n", err)
 	}
 
-	// copy from installer to recovery partition
 	log.Printf("configs.Recovery.Type is %s\n", configs.Recovery.Type)
 
+        if parts.SourceDevPath == parts.TargetDevPath {
+                log.Panicf("The source device and target device are same")
+        }
+
 	if configs.Recovery.Type == rplib.INSTALLER_ONLY {
-		log.Printf("configs.Recovery.Type is %s\n", configs.Recovery.Type)
 		err = InstallSystemPart(parts)
 		if err != nil {
 			os.Exit(-1)
 		}
 	} else {
-		log.Printf("configs.Recovery.Type is %s\n", configs.Recovery.Type)
 		err = CopyRecoveryPart(parts)
 		if err != nil {
 			os.Exit(-1)
