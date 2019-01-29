@@ -36,11 +36,13 @@ var commitstamp string
 var build_date string
 
 const (
-	RECO_ROOT_DIR    = "/run/recovery/"
-	CONFIG_YAML      = RECO_ROOT_DIR + "recovery/config.yaml"
-	RECO_TAR_MNT_DIR = "/tmp/recoMnt/"
-	SYSBOOT_MNT_DIR  = "/tmp/system-boot/"
-	WRITABLE_MNT_DIR = "/tmp/writableMnt/"
+	RECO_ROOT_DIR           = "/run/recovery/"
+	CONFIG_YAML             = RECO_ROOT_DIR + "recovery/config.yaml"
+	RECO_TAR_MNT_DIR        = "/tmp/recoMnt/"
+	SYSBOOT_MNT_DIR         = "/tmp/system-boot/"
+	WRITABLE_MNT_DIR        = "/tmp/writableMnt/"
+	SOURCE_SYSBOOT_MNT_DIR  = "/tmp/src/system-boot/"
+	SOURCE_WRITABLE_MNT_DIR = "/tmp/src/writableMnt/"
 )
 
 var configs rplib.ConfigRecovery
@@ -84,18 +86,32 @@ func main() {
 		os.Exit(-1)
 	}
 
+	log.Println("parse YAML")
 	parseConfigs(CONFIG_YAML)
 
-	// Find boot device, all other partiitons info
+	log.Println("Find boot device, all other partiitons info")
 	parts, err := getPartitions(InstallerLabel)
+
 	if err != nil {
 		log.Panicf("Installer partition not found, error: %s\n", err)
 	}
 
+	log.Println(parts)
 	log.Printf("configs.Recovery.Type is %s\n", configs.Recovery.Type)
 
 	if parts.SourceDevPath == parts.TargetDevPath {
 		log.Panicf("The source device and target device are same")
+	}
+
+	// The bootsize must larger than 50MB
+	if configs.Configs.BootSize >= 50 {
+		SetPartitionStartEnd(parts, SysbootLabel, configs.Configs.BootSize, configs.Configs.Bootloader)
+	} else {
+		log.Println("Invalid bootsize in config.yaml:", configs.Configs.BootSize)
+	}
+
+	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
+		SetPartitionStartEnd(parts, SwapLabel, configs.Configs.SwapSize, configs.Configs.Bootloader)
 	}
 
 	if configs.Recovery.Type == rplib.INSTALLER_ONLY {

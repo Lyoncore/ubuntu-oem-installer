@@ -353,6 +353,36 @@ func GetPartitions(recoveryLabel string) (*Partitions, error) {
 	return &parts, nil
 }
 
+func SetPartitionStartEnd(parts *Partitions, partName string, partSizeMB int, bootloader string) error {
+        if parts == nil {
+                return fmt.Errorf("nil Partitions")
+        }
+
+        switch partName {
+        case "system-boot":
+                if bootloader == "u-boot" {
+                        // Not allow to edit system-boot in u-boot yet.
+                } else if bootloader == "grub" {
+                        parts.Sysboot_start = parts.Recovery_end + 1
+                        parts.Sysboot_end = parts.Sysboot_start + int64(partSizeMB*1024*1024)
+                }
+                //TODO: To support swap partition
+        case "swap":
+                if bootloader == "u-boot" {
+                        // Not allow to edit swap in u-boot yet.
+                } else if bootloader == "grub" {
+                        parts.Swap_start = parts.Sysboot_end + 1
+                        parts.Swap_end = parts.Swap_start + int64(partSizeMB*1024*1024)
+                }
+                // The writable partition would be enlarged to maximum.
+                // Here does not support change the Start, End
+        default:
+                return fmt.Errorf("Unknown Partition Name %s", partName)
+        }
+
+        return nil
+}
+
 func CopyRecoveryPart(parts *Partitions) error {
 	parts.Recovery_nr = 1
 	recoveryBegin := 4
@@ -400,9 +430,9 @@ func CopyRecoveryPart(parts *Partitions) error {
 }
 
 func InstallSystemPart(parts *Partitions) error {
-	log.Println("This is InstallSystemPart...")
+	log.Println("InstallSystemPart...")
 
-	// Recreate partition table.
+	log.Println("Recreate partition table")
 	var dev_path string = strings.Replace(parts.TargetDevPath, "mapper/", "", -1)
 	//part_nr := parts.Last_part_nr
 	parts.Sysboot_nr = 1 //If target device is not same as source, the system-boot parition will start from 1st partition
@@ -417,7 +447,7 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("sgdisk", dev_path, "--randomize-guids", "--move-second-header") // partType == "gpt"
 	rplib.Shellexec("parted", "-ms", dev_path, "mklabel", "gpt")                     // Build a new GPT to remove all partitions if target device is another disk
 
-	// Recreate Boot partition
+	log.Println("Recreate Boot partition")
 	sysboot_path := fmtPartPath(parts.TargetDevPath, parts.Sysboot_nr)
 	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "fat32",
 		fmt.Sprintf("%vB", parts.Sysboot_start), fmt.Sprintf("%vB", parts.Sysboot_end), "name", fmt.Sprintf("%v", parts.Sysboot_nr), SysbootLabel)
