@@ -14,7 +14,7 @@ v * Copyright (C) 2016 Canonical Ltd
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- */
+*/
 
 package main
 
@@ -402,7 +402,6 @@ func CopyRecoveryPart(parts *Partitions) error {
 func InstallSystemPart(parts *Partitions) error {
 	log.Println("This is InstallSystemPart...")
 
-
 	// Recreate partition table.
 	var dev_path string = strings.Replace(parts.TargetDevPath, "mapper/", "", -1)
 	//part_nr := parts.Last_part_nr
@@ -416,7 +415,7 @@ func InstallSystemPart(parts *Partitions) error {
 		parts.Writable_nr = parts.Sysboot_nr + 1 //writable is one after system-boot
 	}
 	rplib.Shellexec("sgdisk", dev_path, "--randomize-guids", "--move-second-header") // partType == "gpt"
-	rplib.Shellexec("parted", "-ms", dev_path, "mklabel", "gpt") // Build a new GPT to remove all partitions if target device is another disk
+	rplib.Shellexec("parted", "-ms", dev_path, "mklabel", "gpt")                     // Build a new GPT to remove all partitions if target device is another disk
 
 	// Recreate Boot partition
 	sysboot_path := fmtPartPath(parts.TargetDevPath, parts.Sysboot_nr)
@@ -428,51 +427,51 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("mkfs.vfat", "-F", "32", "-n", SysbootLabel, sysboot_path)
 
 	err := os.MkdirAll(SYSBOOT_MNT_DIR, 0755)
-        if err != nil {
-                return err
-        }
+	if err != nil {
+		return err
+	}
 
-        err = syscall.Mount(sysboot_path, SYSBOOT_MNT_DIR, "vfat", 0, "")
-        if err != nil {
-                return err
-        }
-        defer syscall.Unmount(SYSBOOT_MNT_DIR, 0)
+	err = syscall.Mount(sysboot_path, SYSBOOT_MNT_DIR, "vfat", 0, "")
+	if err != nil {
+		return err
+	}
+	defer syscall.Unmount(SYSBOOT_MNT_DIR, 0)
 
-        //TODO: Install boot
+	//TODO: Install boot
 
-        rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on")
+	rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on")
 
-        // Create swap partition
-        if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
-                _, new_end := rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
-                parts.Swap_start = int64(new_end + 1)
+	// Create swap partition
+	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
+		_, new_end := rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
+		parts.Swap_start = int64(new_end + 1)
 
-                rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "linux-swap", fmt.Sprintf("%vB", parts.Swap_start), fmt.Sprintf("%vB", parts.Swap_end), "name", fmt.Sprintf("%v", parts.Swap_nr), SwapLabel)
-                rplib.Shellexec("udevadm", "settle")
-                rplib.Shellexec("mkswap", fmtPartPath(parts.TargetDevPath, parts.Swap_nr))
-        }
+		rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "linux-swap", fmt.Sprintf("%vB", parts.Swap_start), fmt.Sprintf("%vB", parts.Swap_end), "name", fmt.Sprintf("%v", parts.Swap_nr), SwapLabel)
+		rplib.Shellexec("udevadm", "settle")
+		rplib.Shellexec("mkswap", fmtPartPath(parts.TargetDevPath, parts.Swap_nr))
+	}
 
-        // Restore writable
-        var new_end int
-        if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
-                _, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Swap_nr)
-        } else {
-                _, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
-        }
+	// Restore writable
+	var new_end int
+	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
+		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Swap_nr)
+	} else {
+		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
+	}
 
-        parts.Writable_start = int64(new_end + 1)
-        var writable_start string = fmt.Sprintf("%vB", parts.Writable_start)
-        var writable_nr string = strconv.Itoa(parts.Writable_nr)
-        writable_path := fmtPartPath(parts.TargetDevPath, parts.Writable_nr)
+	parts.Writable_start = int64(new_end + 1)
+	var writable_start string = fmt.Sprintf("%vB", parts.Writable_start)
+	var writable_nr string = strconv.Itoa(parts.Writable_nr)
+	writable_path := fmtPartPath(parts.TargetDevPath, parts.Writable_nr)
 
-        rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "ext4", writable_start, "-1M", "name", writable_nr, WritableLabel)
+	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "ext4", writable_start, "-1M", "name", writable_nr, WritableLabel)
 
-        rplib.Shellexec("udevadm", "settle")
-        exec.Command("partprobe").Run()
+	rplib.Shellexec("udevadm", "settle")
+	exec.Command("partprobe").Run()
 
-        rplib.Shellexec("mkfs.ext4", "-F", "-L", WritableLabel, writable_path)
+	rplib.Shellexec("mkfs.ext4", "-F", "-L", WritableLabel, writable_path)
 
-        //TODO: install writable
+	//TODO: install writable
 	err = os.MkdirAll(WRITABLE_MNT_DIR, 0755)
 	rplib.Checkerr(err)
 	err = syscall.Mount(writable_path, WRITABLE_MNT_DIR, "ext4", 0, "")

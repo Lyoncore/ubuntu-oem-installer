@@ -40,7 +40,7 @@ const (
 	CONFIG_YAML      = RECO_ROOT_DIR + "recovery/config.yaml"
 	RECO_TAR_MNT_DIR = "/tmp/recoMnt/"
 	SYSBOOT_MNT_DIR  = "/tmp/system-boot/"
-	WRITABLE_MNT_DIR     = "/tmp/writableMnt/"
+	WRITABLE_MNT_DIR = "/tmp/writableMnt/"
 )
 
 var configs rplib.ConfigRecovery
@@ -94,9 +94,9 @@ func main() {
 
 	log.Printf("configs.Recovery.Type is %s\n", configs.Recovery.Type)
 
-        if parts.SourceDevPath == parts.TargetDevPath {
-                log.Panicf("The source device and target device are same")
-        }
+	if parts.SourceDevPath == parts.TargetDevPath {
+		log.Panicf("The source device and target device are same")
+	}
 
 	if configs.Recovery.Type == rplib.INSTALLER_ONLY {
 		err = InstallSystemPart(parts)
