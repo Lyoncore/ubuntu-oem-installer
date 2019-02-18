@@ -508,9 +508,17 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("udevadm", "settle")
 	exec.Command("partprobe").Run()
 
+	//TODO: install writable
+
+	rplib.Shellcmd("echo 1234 > /tmp/mykeyfile")
+	rplib.Shellexec("cryptsetup","luksFormat",writable_path, "/tmp/mykeyfile")
+	rplib.Shellexec("cryptsetup","--key-file","/tmp/mykeyfile","open",writable_path,"cryptroot")
+
+	//setup new writablepath
+	writable_path = "/dev/mapper/cryptroot"
+
 	rplib.Shellexec("mkfs.ext4", "-F", "-L", WritableLabel, writable_path)
 
-	//TODO: install writable
 	err = os.MkdirAll(WRITABLE_MNT_DIR, 0755)
 	rplib.Checkerr(err)
 	err = syscall.Mount(writable_path, WRITABLE_MNT_DIR, "ext4", 0, "")
