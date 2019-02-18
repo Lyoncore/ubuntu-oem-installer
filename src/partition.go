@@ -457,19 +457,25 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("mkfs.vfat", "-F", "32", "-n", SysbootLabel, sysboot_path)
 
 	err := os.MkdirAll(SYSBOOT_MNT_DIR, 0755)
-	if err != nil {
-		return err
-	}
-
+	rplib.Checkerr(err)
 	err = syscall.Mount(sysboot_path, SYSBOOT_MNT_DIR, "vfat", 0, "")
-	if err != nil {
-		return err
-	}
+	rplib.Checkerr(err)
 	defer syscall.Unmount(SYSBOOT_MNT_DIR, 0)
 
 	//TODO: Install boot
+        // Copy /boot data on src partition 2
+        sysboot_src_path := fmtPartPath(parts.SourceDevPath, 2) //MAGIC: this is src part sysboot
 
-	rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on")
+        err = os.MkdirAll(SOURCE_SYSBOOT_MNT_DIR, 0755)
+        rplib.Checkerr(err)
+        err = syscall.Mount(sysboot_src_path, SOURCE_SYSBOOT_MNT_DIR, "vfat", 0, "")
+        rplib.Checkerr(err)
+        defer syscall.Unmount(SOURCE_SYSBOOT_MNT_DIR, 0)
+
+        rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_SYSBOOT_MNT_DIR, SYSBOOT_MNT_DIR))
+        rplib.Shellexec("sync")
+
+	rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on") //CHECK: efi should not need this.
 
 	// Create swap partition
 	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
@@ -507,6 +513,17 @@ func InstallSystemPart(parts *Partitions) error {
 	err = syscall.Mount(writable_path, WRITABLE_MNT_DIR, "ext4", 0, "")
 	rplib.Checkerr(err)
 	defer syscall.Unmount(WRITABLE_MNT_DIR, 0)
+
+	writable_src_path := fmtPartPath(parts.SourceDevPath, 3) //MAGIC: this is src part writable
+
+	err = os.MkdirAll(SOURCE_WRITABLE_MNT_DIR, 0755)
+	rplib.Checkerr(err)
+	err = syscall.Mount(writable_src_path, SOURCE_WRITABLE_MNT_DIR, "ext4", 0, "")
+	rplib.Checkerr(err)
+	defer syscall.Unmount(SOURCE_WRITABLE_MNT_DIR, 0)
+
+        rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_WRITABLE_MNT_DIR, WRITABLE_MNT_DIR))
+        rplib.Shellexec("sync")
 
 	log.Println("Finish InstallSystemPart...")
 	return nil

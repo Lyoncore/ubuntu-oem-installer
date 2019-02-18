@@ -11,7 +11,7 @@ git clone https://github.com/Lyoncore/ubuntu-oem-installer.git
 cd ubuntu-oem-installer
 GOPATH=$PWD go get github.com/rogpeppe/godeps
 GOPATH=$PWD godeps -t -u dependencies.tsv
-GOPATH=$PWD go run bulid.go build
+GOPATH=$PWD go run build.go build
 ```
 
 ## run tests
