@@ -447,7 +447,8 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("sgdisk", dev_path, "--randomize-guids", "--move-second-header") // partType == "gpt"
 	rplib.Shellexec("parted", "-ms", dev_path, "mklabel", "gpt")                     // Build a new GPT to remove all partitions if target device is another disk
 
-	log.Println("Recreate Boot partition")
+
+	log.Println("Create Boot partition")
 	sysboot_path := fmtPartPath(parts.TargetDevPath, parts.Sysboot_nr)
 	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "fat32",
 		fmt.Sprintf("%vB", parts.Sysboot_start), fmt.Sprintf("%vB", parts.Sysboot_end), "name", fmt.Sprintf("%v", parts.Sysboot_nr), SysbootLabel)
@@ -479,6 +480,7 @@ func InstallSystemPart(parts *Partitions) error {
 
 	// Create swap partition
 	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
+		log.Println("Create Swap partition")
 		_, new_end := rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
 		parts.Swap_start = int64(new_end + 1)
 
@@ -488,6 +490,7 @@ func InstallSystemPart(parts *Partitions) error {
 	}
 
 	// Restore writable
+	log.Println("Create writable partition")
 	var new_end int
 	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
 		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Swap_nr)
