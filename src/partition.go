@@ -510,6 +510,7 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("sleep", "2") //wait the partition presents
 
 	//TODO: install writable
+	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
 
 	rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
 	rplib.Shellexec("cryptsetup", "luksFormat", writable_path, "/tmp/mykeyfile")
@@ -538,7 +539,7 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_WRITABLE_MNT_DIR, WRITABLE_MNT_DIR))
 	rplib.Shellexec("sync")
 
-	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
+
 
 	log.Println("Finish InstallSystemPart...")
 	return nil
