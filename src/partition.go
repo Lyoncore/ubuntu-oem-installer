@@ -354,33 +354,33 @@ func GetPartitions(recoveryLabel string) (*Partitions, error) {
 }
 
 func SetPartitionStartEnd(parts *Partitions, partName string, partSizeMB int, bootloader string) error {
-        if parts == nil {
-                return fmt.Errorf("nil Partitions")
-        }
+	if parts == nil {
+		return fmt.Errorf("nil Partitions")
+	}
 
-        switch partName {
-        case "system-boot":
-                if bootloader == "u-boot" {
-                        // Not allow to edit system-boot in u-boot yet.
-                } else if bootloader == "grub" {
-                        parts.Sysboot_start = parts.Recovery_end + 1
-                        parts.Sysboot_end = parts.Sysboot_start + int64(partSizeMB*1024*1024)
-                }
-                //TODO: To support swap partition
-        case "swap":
-                if bootloader == "u-boot" {
-                        // Not allow to edit swap in u-boot yet.
-                } else if bootloader == "grub" {
-                        parts.Swap_start = parts.Sysboot_end + 1
-                        parts.Swap_end = parts.Swap_start + int64(partSizeMB*1024*1024)
-                }
-                // The writable partition would be enlarged to maximum.
-                // Here does not support change the Start, End
-        default:
-                return fmt.Errorf("Unknown Partition Name %s", partName)
-        }
+	switch partName {
+	case "system-boot":
+		if bootloader == "u-boot" {
+			// Not allow to edit system-boot in u-boot yet.
+		} else if bootloader == "grub" {
+			parts.Sysboot_start = parts.Recovery_end + 1
+			parts.Sysboot_end = parts.Sysboot_start + int64(partSizeMB*1024*1024)
+		}
+		//TODO: To support swap partition
+	case "swap":
+		if bootloader == "u-boot" {
+			// Not allow to edit swap in u-boot yet.
+		} else if bootloader == "grub" {
+			parts.Swap_start = parts.Sysboot_end + 1
+			parts.Swap_end = parts.Swap_start + int64(partSizeMB*1024*1024)
+		}
+		// The writable partition would be enlarged to maximum.
+		// Here does not support change the Start, End
+	default:
+		return fmt.Errorf("Unknown Partition Name %s", partName)
+	}
 
-        return nil
+	return nil
 }
 
 func CopyRecoveryPart(parts *Partitions) error {
@@ -447,7 +447,6 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("sgdisk", dev_path, "--randomize-guids", "--move-second-header") // partType == "gpt"
 	rplib.Shellexec("parted", "-ms", dev_path, "mklabel", "gpt")                     // Build a new GPT to remove all partitions if target device is another disk
 
-
 	log.Println("Create Boot partition")
 	sysboot_path := fmtPartPath(parts.TargetDevPath, parts.Sysboot_nr)
 	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "fat32",
@@ -464,17 +463,17 @@ func InstallSystemPart(parts *Partitions) error {
 	defer syscall.Unmount(SYSBOOT_MNT_DIR, 0)
 
 	//TODO: Install boot
-        // Copy /boot data on src partition 2
-        sysboot_src_path := fmtPartPath(parts.SourceDevPath, 2) //MAGIC: this is src part sysboot
+	// Copy /boot data on src partition 2
+	sysboot_src_path := fmtPartPath(parts.SourceDevPath, 2) //MAGIC: this is src part sysboot
 
-        err = os.MkdirAll(SOURCE_SYSBOOT_MNT_DIR, 0755)
-        rplib.Checkerr(err)
-        err = syscall.Mount(sysboot_src_path, SOURCE_SYSBOOT_MNT_DIR, "vfat", 0, "")
-        rplib.Checkerr(err)
-        defer syscall.Unmount(SOURCE_SYSBOOT_MNT_DIR, 0)
+	err = os.MkdirAll(SOURCE_SYSBOOT_MNT_DIR, 0755)
+	rplib.Checkerr(err)
+	err = syscall.Mount(sysboot_src_path, SOURCE_SYSBOOT_MNT_DIR, "vfat", 0, "")
+	rplib.Checkerr(err)
+	defer syscall.Unmount(SOURCE_SYSBOOT_MNT_DIR, 0)
 
-        rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_SYSBOOT_MNT_DIR, SYSBOOT_MNT_DIR))
-        rplib.Shellexec("sync")
+	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_SYSBOOT_MNT_DIR, SYSBOOT_MNT_DIR))
+	rplib.Shellexec("sync")
 
 	rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on") //CHECK: efi should not need this.
 
@@ -507,14 +506,14 @@ func InstallSystemPart(parts *Partitions) error {
 
 	rplib.Shellexec("udevadm", "settle")
 	exec.Command("partprobe").Run()
-	rplib.Shellexec("modprobe","dm_crypt")
+	rplib.Shellexec("modprobe", "dm_crypt")
 	rplib.Shellexec("sleep", "2") //wait the partition presents
 
 	//TODO: install writable
 
 	rplib.Shellcmd("echo 1234 > /tmp/mykeyfile")
-	rplib.Shellexec("cryptsetup","luksFormat",writable_path, "/tmp/mykeyfile")
-	rplib.Shellexec("cryptsetup","--key-file","/tmp/mykeyfile","open",writable_path,"cryptroot")
+	rplib.Shellexec("cryptsetup", "luksFormat", writable_path, "/tmp/mykeyfile")
+	rplib.Shellexec("cryptsetup", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
 
 	//setup new writablepath
 	writable_path = "/dev/mapper/cryptroot"
@@ -535,10 +534,10 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Checkerr(err)
 	defer syscall.Unmount(SOURCE_WRITABLE_MNT_DIR, 0)
 
-        rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_WRITABLE_MNT_DIR, WRITABLE_MNT_DIR))
-        rplib.Shellexec("sync")
+	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_WRITABLE_MNT_DIR, WRITABLE_MNT_DIR))
+	rplib.Shellexec("sync")
 
-        rplib.Shellexec("tpm2_pcrlist","-T","device:/dev/tpmrm0")
+	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
 
 	log.Println("Finish InstallSystemPart...")
 	return nil
