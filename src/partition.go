@@ -505,8 +505,8 @@ func InstallSystemPart(parts *Partitions) error {
 
 	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "ext4", writable_start, "-1M", "name", writable_nr, WritableLabel)
 
-	rplib.Shellexec("udevadm", "settle")
-	exec.Command("partprobe").Run()
+	//rplib.Shellexec("udevadm", "settle")
+	//exec.Command("partprobe").Run()
 	rplib.Shellexec("blockdev", "--rereadpt", parts.TargetDevPath)
 
 	//TODO: install writable
