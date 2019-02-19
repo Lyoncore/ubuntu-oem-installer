@@ -503,7 +503,7 @@ func InstallSystemPart(parts *Partitions) error {
 	var writable_nr string = strconv.Itoa(parts.Writable_nr)
 	writable_path := fmtPartPath(parts.TargetDevPath, parts.Writable_nr)
 
-	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "ext4", writable_start, "-1M", "name", writable_nr, WritableLabel)
+	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "ext4", writable_start, "100%", "name", writable_nr, WritableLabel)
 
 	//rplib.Shellexec("udevadm", "settle")
 	//exec.Command("partprobe").Run()
