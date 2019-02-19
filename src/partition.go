@@ -511,8 +511,9 @@ func InstallSystemPart(parts *Partitions) error {
 
 	//TODO: install writable
 
-	rplib.Shellcmd("echo 1234 > /tmp/mykeyfile")
+	rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
 	rplib.Shellexec("cryptsetup", "luksFormat", writable_path, "/tmp/mykeyfile")
+	log.Println("Open the cryptroot")
 	rplib.Shellexec("cryptsetup", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
 
 	//setup new writablepath
