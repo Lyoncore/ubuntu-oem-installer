@@ -507,6 +507,7 @@ func InstallSystemPart(parts *Partitions) error {
 
 	rplib.Shellexec("udevadm", "settle")
 	exec.Command("partprobe").Run()
+	rplib.Shellexec("blockdev", "--rereadpt", parts.TargetDevPath)
 
 	//TODO: install writable
 
