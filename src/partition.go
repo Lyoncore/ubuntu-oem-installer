@@ -512,8 +512,9 @@ func InstallSystemPart(parts *Partitions) error {
 	//TODO: install writable
 	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
 
-	rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
-	rplib.Shellexec("cryptsetup", "luksFormat", writable_path, "/tmp/mykeyfile")
+	//rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
+	rplib.Shellcmd(fmt.Sprintf("echo -n 1234567890abcdefg | cryptsetup luksFormat %s 2>&1",writable_path))
+
 	log.Println("Open the cryptroot")
 	rplib.Shellexec("cryptsetup", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
 
