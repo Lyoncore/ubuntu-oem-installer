@@ -513,10 +513,10 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
 
 	//rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
-	rplib.Shellcmd(fmt.Sprintf("echo -n 1234567890abcdefg | cryptsetup luksFormat %s 2>&1",writable_path))
+	rplib.Shellcmd(fmt.Sprintf("echo -n 1234567890abcdefg | cryptsetup luksFormat %s 2>&1", writable_path))
 
 	log.Println("Open the cryptroot")
-	rplib.Shellexec("cryptsetup", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
+	rplib.Shellexec("cryptsetup", "--debug", "-q", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
 
 	//setup new writablepath
 	writable_path = "/dev/mapper/cryptroot"
@@ -539,8 +539,6 @@ func InstallSystemPart(parts *Partitions) error {
 
 	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_WRITABLE_MNT_DIR, WRITABLE_MNT_DIR))
 	rplib.Shellexec("sync")
-
-
 
 	log.Println("Finish InstallSystemPart...")
 	return nil
