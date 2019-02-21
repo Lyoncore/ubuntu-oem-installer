@@ -447,56 +447,24 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("sgdisk", dev_path, "--randomize-guids", "--move-second-header") // partType == "gpt"
 	rplib.Shellexec("parted", "-ms", dev_path, "mklabel", "gpt")                     // Build a new GPT to remove all partitions if target device is another disk
 
-	log.Println("Create Boot partition")
+	log.Println("Create Boot partition entry in GPT")
 	sysboot_path := fmtPartPath(parts.TargetDevPath, parts.Sysboot_nr)
 	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "fat32",
 		fmt.Sprintf("%vB", parts.Sysboot_start), fmt.Sprintf("%vB", parts.Sysboot_end), "name", fmt.Sprintf("%v", parts.Sysboot_nr), SysbootLabel)
-	rplib.Shellexec("udevadm", "settle")
-	exec.Command("partprobe").Run()
-	rplib.Shellexec("sleep", "2") //wait the partition presents
-	rplib.Shellexec("mkfs.vfat", "-F", "32", "-n", SysbootLabel, sysboot_path)
-
-	err := os.MkdirAll(SYSBOOT_MNT_DIR, 0755)
-	rplib.Checkerr(err)
-	err = syscall.Mount(sysboot_path, SYSBOOT_MNT_DIR, "vfat", 0, "")
-	rplib.Checkerr(err)
-	defer syscall.Unmount(SYSBOOT_MNT_DIR, 0)
-
-	//TODO: Install boot
-	// Copy /boot data on src partition 2
-	sysboot_src_path := fmtPartPath(parts.SourceDevPath, 2) //MAGIC: this is src part sysboot
-
-	err = os.MkdirAll(SOURCE_SYSBOOT_MNT_DIR, 0755)
-	rplib.Checkerr(err)
-	err = syscall.Mount(sysboot_src_path, SOURCE_SYSBOOT_MNT_DIR, "vfat", 0, "")
-	rplib.Checkerr(err)
-	defer syscall.Unmount(SOURCE_SYSBOOT_MNT_DIR, 0)
-
-	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_SYSBOOT_MNT_DIR, SYSBOOT_MNT_DIR))
-	rplib.Shellexec("sync")
-
-	rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on") //CHECK: efi should not need this.
 
 	// Create swap partition
 	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
-		log.Println("Create Swap partition")
+		log.Println("Create Swap partition entry in GPT")
 		_, new_end := rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
 		parts.Swap_start = int64(new_end + 1)
-
 		rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "linux-swap", fmt.Sprintf("%vB", parts.Swap_start), fmt.Sprintf("%vB", parts.Swap_end), "name", fmt.Sprintf("%v", parts.Swap_nr), SwapLabel)
-		rplib.Shellexec("udevadm", "settle")
-		rplib.Shellexec("mkswap", fmtPartPath(parts.TargetDevPath, parts.Swap_nr))
-	}
-
-	// Restore writable
-	log.Println("Create writable partition")
-	var new_end int
-	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
 		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Swap_nr)
 	} else {
+		log.Println("Do not Create Swap partition entry in GPT")
 		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
 	}
 
+	log.Println("Create Writable partition entry in GPT")
 	parts.Writable_start = int64(new_end + 1)
 	var writable_start string = fmt.Sprintf("%vB", parts.Writable_start)
 	var writable_nr string = strconv.Itoa(parts.Writable_nr)
@@ -507,10 +475,10 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("modprobe", "dm_crypt")
 	rplib.Shellexec("udevadm", "settle")
 	exec.Command("partprobe").Run()
-	rplib.Shellexec("udevadm", "trigger")
 	rplib.Shellexec("sleep", "2") //wait the partition presents
 
-	//TODO: install writable
+	// Restore writable
+	log.Println("Create writable partition filesystem")
 	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
 
 	//rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
@@ -540,6 +508,37 @@ func InstallSystemPart(parts *Partitions) error {
 
 	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_WRITABLE_MNT_DIR, WRITABLE_MNT_DIR))
 	rplib.Shellexec("sync")
+
+	//restore Boot
+	log.Println("Create Boot partition filesystem")
+	rplib.Shellexec("mkfs.vfat", "-F", "32", "-n", SysbootLabel, sysboot_path)
+
+	err := os.MkdirAll(SYSBOOT_MNT_DIR, 0755)
+	rplib.Checkerr(err)
+	err = syscall.Mount(sysboot_path, SYSBOOT_MNT_DIR, "vfat", 0, "")
+	rplib.Checkerr(err)
+	defer syscall.Unmount(SYSBOOT_MNT_DIR, 0)
+
+	//TODO: Install boot
+	// Copy /boot data on src partition 2
+	sysboot_src_path := fmtPartPath(parts.SourceDevPath, 2) //MAGIC: this is src part sysboot
+
+	err = os.MkdirAll(SOURCE_SYSBOOT_MNT_DIR, 0755)
+	rplib.Checkerr(err)
+	err = syscall.Mount(sysboot_src_path, SOURCE_SYSBOOT_MNT_DIR, "vfat", 0, "")
+	rplib.Checkerr(err)
+	defer syscall.Unmount(SOURCE_SYSBOOT_MNT_DIR, 0)
+
+	rplib.Shellcmd(fmt.Sprintf("rsync -aH %s %s", SOURCE_SYSBOOT_MNT_DIR, SYSBOOT_MNT_DIR))
+	rplib.Shellexec("sync")
+
+	rplib.Shellexec("parted", "-ms", dev_path, "set", strconv.Itoa(parts.Sysboot_nr), "boot", "on") //CHECK: efi should not need this.
+
+	// Create swap partition
+	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
+		log.Println("Create Swap partition filesystem")
+		rplib.Shellexec("mkswap", fmtPartPath(parts.TargetDevPath, parts.Swap_nr))
+	}
 
 	log.Println("Finish InstallSystemPart...")
 	return nil
