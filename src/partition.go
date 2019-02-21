@@ -453,9 +453,10 @@ func InstallSystemPart(parts *Partitions) error {
 		fmt.Sprintf("%vB", parts.Sysboot_start), fmt.Sprintf("%vB", parts.Sysboot_end), "name", fmt.Sprintf("%v", parts.Sysboot_nr), SysbootLabel)
 
 	// Create swap partition
+	var new_end int
 	if configs.Configs.Swap == true && configs.Configs.SwapFile != true && configs.Configs.SwapSize > 0 {
 		log.Println("Create Swap partition entry in GPT")
-		_, new_end := rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
+		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Sysboot_nr)
 		parts.Swap_start = int64(new_end + 1)
 		rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "linux-swap", fmt.Sprintf("%vB", parts.Swap_start), fmt.Sprintf("%vB", parts.Swap_end), "name", fmt.Sprintf("%v", parts.Swap_nr), SwapLabel)
 		_, new_end = rplib.GetPartitionBeginEnd(dev_path, parts.Swap_nr)
@@ -492,7 +493,7 @@ func InstallSystemPart(parts *Partitions) error {
 
 	rplib.Shellexec("mkfs.ext4", "-F", "-L", WritableLabel, writable_path)
 
-	err = os.MkdirAll(WRITABLE_MNT_DIR, 0755)
+	err := os.MkdirAll(WRITABLE_MNT_DIR, 0755)
 	rplib.Checkerr(err)
 	err = syscall.Mount(writable_path, WRITABLE_MNT_DIR, "ext4", 0, "")
 	rplib.Checkerr(err)
@@ -513,7 +514,7 @@ func InstallSystemPart(parts *Partitions) error {
 	log.Println("Create Boot partition filesystem")
 	rplib.Shellexec("mkfs.vfat", "-F", "32", "-n", SysbootLabel, sysboot_path)
 
-	err := os.MkdirAll(SYSBOOT_MNT_DIR, 0755)
+	err = os.MkdirAll(SYSBOOT_MNT_DIR, 0755)
 	rplib.Checkerr(err)
 	err = syscall.Mount(sysboot_path, SYSBOOT_MNT_DIR, "vfat", 0, "")
 	rplib.Checkerr(err)
