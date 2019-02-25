@@ -474,6 +474,7 @@ func InstallSystemPart(parts *Partitions) error {
 	rplib.Shellexec("parted", "-a", "optimal", "-ms", dev_path, "--", "mkpart", "primary", "ext4", writable_start, "100%", "name", writable_nr, WritableLabel)
 
 	rplib.Shellexec("modprobe", "dm_crypt")
+	rplib.Shellexec("modprobe", "algif_skcipher")
 	rplib.Shellexec("udevadm", "settle")
 	exec.Command("partprobe").Run()
 	rplib.Shellexec("sleep", "2") //wait the partition presents
@@ -482,10 +483,8 @@ func InstallSystemPart(parts *Partitions) error {
 	log.Println("Create writable partition filesystem")
 	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
 	
-	rplib.Shellexec("find","/dev")
-
-	//rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
-	rplib.Shellcmd(fmt.Sprintf("echo -n 1234567890abcdefg | cryptsetup --verbose --debug -q luksFormat /dev/disk/by-partlabel/%s 2>&1", WritableLabel))
+	rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
+	rplib.Shellcmd(fmt.Sprintf("cryptsetup --verbose --debug -q luksFormat %s /tmp/mykeyfile 2>&1", writable_path))
 
 	log.Println("Open the cryptroot")
 	rplib.Shellexec("cryptsetup", "--verbose", "--debug", "-q", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
