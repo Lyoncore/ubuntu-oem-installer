@@ -481,9 +481,11 @@ func InstallSystemPart(parts *Partitions) error {
 	// Restore writable
 	log.Println("Create writable partition filesystem")
 	rplib.Shellexec("tpm2_pcrlist", "-T", "device:/dev/tpmrm0")
+	
+	rplib.Shellexec("find","/dev")
 
 	//rplib.Shellcmd("echo 1234567890abcdefg > /tmp/mykeyfile")
-	rplib.Shellcmd(fmt.Sprintf("echo -n 1234567890abcdefg | cryptsetup --verbose --debug -q luksFormat %s 2>&1", writable_path))
+	rplib.Shellcmd(fmt.Sprintf("echo -n 1234567890abcdefg | cryptsetup --verbose --debug -q luksFormat /dev/disk/by-partlabel/%s 2>&1", WritableLabel))
 
 	log.Println("Open the cryptroot")
 	rplib.Shellexec("cryptsetup", "--verbose", "--debug", "-q", "--key-file", "/tmp/mykeyfile", "open", writable_path, "cryptroot")
